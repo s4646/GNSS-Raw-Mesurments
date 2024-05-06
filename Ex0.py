@@ -61,8 +61,22 @@ def create_dataframes() -> tuple[pd.DataFrame, pd.DataFrame]:
 
     return measurements, android_fixes
 
+def timestamp_generation(measurements: pd.DataFrame) -> pd.DataFrame:
+    measurements['GpsTimeNanos'] = measurements['TimeNanos'] - (measurements['FullBiasNanos'] - measurements['BiasNanos'])
+    gpsepoch = datetime(1980, 1, 6, 0, 0, 0)
+    measurements['UnixTime'] = pd.to_datetime(measurements['GpsTimeNanos'], utc = True, origin=gpsepoch)
+    measurements['UnixTime'] = measurements['UnixTime']
+
+    # Split data into measurement epochs
+    measurements['Epoch'] = 0
+    measurements.loc[measurements['UnixTime'] - measurements['UnixTime'].shift() > timedelta(milliseconds=200), 'Epoch'] = 1
+    measurements['Epoch'] = measurements['Epoch'].cumsum()
+
+    return measurements
+
 def main():
     measurements, _ = create_dataframes()
+    measurements = timestamp_generation(measurements)
 
 if __name__ == '__main__':
     main()
