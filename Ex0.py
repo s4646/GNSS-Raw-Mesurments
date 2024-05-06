@@ -74,9 +74,28 @@ def timestamp_generation(measurements: pd.DataFrame) -> pd.DataFrame:
 
     return measurements
 
+def pseudorange_calculation(measurements: pd.DataFrame) -> pd.DataFrame:
+    WEEKSEC = 604800
+    LIGHTSPEED = 2.99792458e8
+
+    # This should account for rollovers since it uses a week number specific to each measurement
+    measurements['tRxGnssNanos'] = measurements['TimeNanos'] + measurements['TimeOffsetNanos'] - (measurements['FullBiasNanos'].iloc[0] + measurements['BiasNanos'].iloc[0])
+    measurements['GpsWeekNumber'] = np.floor(1e-9 * measurements['tRxGnssNanos'] / WEEKSEC)
+    measurements['tRxSeconds'] = 1e-9*measurements['tRxGnssNanos'] - WEEKSEC * measurements['GpsWeekNumber']
+    measurements['tTxSeconds'] = 1e-9*(measurements['ReceivedSvTimeNanos'] + measurements['TimeOffsetNanos'])
+    # Calculate pseudorange in seconds
+    measurements['prSeconds'] = measurements['tRxSeconds'] - measurements['tTxSeconds']
+
+    # Conver to meters
+    measurements['PrM'] = LIGHTSPEED * measurements['prSeconds']
+    measurements['PrSigmaM'] = LIGHTSPEED * 1e-9 * measurements['ReceivedSvTimeUncertaintyNanos']
+
+    return measurements
+
 def main():
     measurements, _ = create_dataframes()
     measurements = timestamp_generation(measurements)
+    measurements = pseudorange_calculation(measurements)
 
 if __name__ == '__main__':
     main()
