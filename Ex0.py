@@ -111,6 +111,65 @@ def retrieve_ephemeris_data(measurements: pd.DataFrame, epoch: int) -> tuple:
 
     return ephemeris, one_epoch
 
+def calculate_satellite_position(ephemeris, transmit_time) -> pd.DataFrame:
+    mu = 3.986005e14
+    OmegaDot_e = 7.2921151467e-5
+    F = -4.442807633e-10
+    sv_position = pd.DataFrame()
+    sv_position['sv']= ephemeris.index
+    sv_position.set_index('sv', inplace=True)
+    sv_position['t_k'] = transmit_time - ephemeris['t_oe']
+    A = ephemeris['sqrtA'].pow(2)
+    n_0 = np.sqrt(mu / A.pow(3))
+    n = n_0 + ephemeris['deltaN']
+    M_k = ephemeris['M_0'] + n * sv_position['t_k']
+    E_k = M_k
+    err = pd.Series(data=[1]*len(sv_position.index))
+    i = 0
+    while err.abs().min() > 1e-8 and i < 10:
+        new_vals = M_k + ephemeris['e']*np.sin(E_k)
+        err = new_vals - E_k
+        E_k = new_vals
+        i += 1
+        
+    sinE_k = np.sin(E_k)
+    cosE_k = np.cos(E_k)
+    delT_r = F * ephemeris['e'].pow(ephemeris['sqrtA']) * sinE_k
+    delT_oc = transmit_time - ephemeris['t_oc']
+    sv_position['delT_sv'] = ephemeris['SVclockBias'] + ephemeris['SVclockDrift'] * delT_oc + ephemeris['SVclockDriftRate'] * delT_oc.pow(2)
+
+    v_k = np.arctan2(np.sqrt(1-ephemeris['e'].pow(2))*sinE_k,(cosE_k - ephemeris['e']))
+
+    Phi_k = v_k + ephemeris['omega']
+
+    sin2Phi_k = np.sin(2*Phi_k)
+    cos2Phi_k = np.cos(2*Phi_k)
+
+    du_k = ephemeris['C_us']*sin2Phi_k + ephemeris['C_uc']*cos2Phi_k
+    dr_k = ephemeris['C_rs']*sin2Phi_k + ephemeris['C_rc']*cos2Phi_k
+    di_k = ephemeris['C_is']*sin2Phi_k + ephemeris['C_ic']*cos2Phi_k
+
+    u_k = Phi_k + du_k
+
+    r_k = A*(1 - ephemeris['e']*np.cos(E_k)) + dr_k
+
+    i_k = ephemeris['i_0'] + di_k + ephemeris['IDOT']*sv_position['t_k']
+
+    x_k_prime = r_k*np.cos(u_k)
+    y_k_prime = r_k*np.sin(u_k)
+
+    Omega_k = ephemeris['Omega_0'] + (ephemeris['OmegaDot'] - OmegaDot_e)*sv_position['t_k'] - OmegaDot_e*ephemeris['t_oe']
+
+    sv_position['x_k'] = x_k_prime*np.cos(Omega_k) - y_k_prime*np.cos(i_k)*np.sin(Omega_k)
+    sv_position['y_k'] = x_k_prime*np.sin(Omega_k) + y_k_prime*np.cos(i_k)*np.cos(Omega_k)
+    sv_position['z_k'] = y_k_prime*np.sin(i_k)
+    
+    # # Run the function and check out the results:
+    # sv_position = calculate_satellite_position(ephemeris, one_epoch['tTxSeconds'])
+    # print(sv_position)
+    
+    return sv_position
+
 def main():
     measurements, _ = create_dataframes()
     measurements = timestamp_generation(measurements)
