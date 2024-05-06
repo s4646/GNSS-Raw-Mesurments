@@ -170,10 +170,23 @@ def calculate_satellite_position(ephemeris, transmit_time) -> pd.DataFrame:
     
     return sv_position
 
+def create_position_dataframe(measurements: pd.DataFrame) -> pd.DataFrame:
+    position_dataframe = pd.DataFrame()
+    epoches = measurements.groupby('Epoch').groups.keys()
+    
+    for epoch in epoches:
+        ephemeris, one_epoch = retrieve_ephemeris_data(measurements, epoch)
+        temp_df = calculate_satellite_position(ephemeris, one_epoch['tTxSeconds'])
+        position_dataframe = pd.concat([position_dataframe, temp_df])
+
+    return position_dataframe
+
 def main():
     measurements, _ = create_dataframes()
     measurements = timestamp_generation(measurements)
     measurements = pseudorange_calculation(measurements)
+
+    df = create_position_dataframe(measurements)
 
 if __name__ == '__main__':
     main()
