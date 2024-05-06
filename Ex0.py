@@ -92,6 +92,25 @@ def pseudorange_calculation(measurements: pd.DataFrame) -> pd.DataFrame:
 
     return measurements
 
+def retrieve_ephemeris_data(measurements: pd.DataFrame, epoch: int) -> tuple:
+    manager = EphemerisManager(r'Data/Fixed/')
+
+    epoch = 0
+    num_sats = 0
+    one_epoch = measurements.loc[(measurements['Epoch'] == epoch) & (measurements['prSeconds'] < 0.1)].drop_duplicates(subset='SvName')
+    timestamp = one_epoch.iloc[0]['UnixTime'].to_pydatetime(warn=False)
+    one_epoch.set_index('SvName', inplace=True)
+    num_sats = len(one_epoch.index)
+    epoch += 1
+
+    sats = one_epoch.index.unique().tolist()
+    # print(type(timestamp))
+    ephemeris = manager.get_ephemeris(timestamp, sats)
+    # print(timestamp)
+    # print(one_epoch[['UnixTime', 'tTxSeconds', 'GpsWeekNumber']])
+
+    return ephemeris, one_epoch
+
 def main():
     measurements, _ = create_dataframes()
     measurements = timestamp_generation(measurements)
