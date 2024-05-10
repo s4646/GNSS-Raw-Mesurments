@@ -95,13 +95,13 @@ def pseudorange_calculation(measurements: pd.DataFrame) -> pd.DataFrame:
 def retrieve_ephemeris_data(measurements: pd.DataFrame, epoch: int) -> tuple:
     manager = EphemerisManager(r'Data/Fixed/')
 
-    epoch = 0
-    num_sats = 0
+    # epoch = 0
+    # num_sats = 0
     one_epoch = measurements.loc[(measurements['Epoch'] == epoch) & (measurements['prSeconds'] < 0.1)].drop_duplicates(subset='SvName')
     timestamp = one_epoch.iloc[0]['UnixTime'].to_pydatetime(warn=False)
     one_epoch.set_index('SvName', inplace=True)
-    num_sats = len(one_epoch.index)
-    epoch += 1
+    # num_sats = len(one_epoch.index)
+    # epoch += 1
 
     sats = one_epoch.index.unique().tolist()
     # print(type(timestamp))
@@ -181,12 +181,22 @@ def create_position_dataframe(measurements: pd.DataFrame) -> pd.DataFrame:
 
     return position_dataframe
 
+def remove_duplicates_from_measurements(measurements:pd.DataFrame) -> pd.DataFrame:
+    measurements_no_dups = pd.DataFrame()
+    epoches = measurements.groupby('Epoch').groups.keys()
+    for epoch in epoches:
+        temp_df = measurements.loc[(measurements['Epoch'] == epoch) & (measurements['prSeconds'] < 0.1)].drop_duplicates(subset='SvName')
+        measurements_no_dups = pd.concat([measurements_no_dups, temp_df])
+
+    return measurements_no_dups
+
 def main():
     measurements, _ = create_dataframes()
     measurements = timestamp_generation(measurements)
     measurements = pseudorange_calculation(measurements)
 
     df = create_position_dataframe(measurements)
+    measurements = remove_duplicates_from_measurements(measurements)
 
 if __name__ == '__main__':
     main()
