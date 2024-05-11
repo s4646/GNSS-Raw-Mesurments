@@ -190,13 +190,28 @@ def remove_duplicates_from_measurements(measurements:pd.DataFrame) -> pd.DataFra
 
     return measurements_no_dups
 
+def create_final_dataframe(measurements: pd.DataFrame) -> pd.DataFrame:
+    final_df = pd.DataFrame()
+    epoches = measurements.groupby('Epoch').groups.keys()
+    
+    for epoch in epoches:
+        ephemeris, one_epoch = retrieve_ephemeris_data(measurements, epoch)
+        satellite_coords = calculate_satellite_position(ephemeris, one_epoch['tTxSeconds'])
+        
+        one_epoch['x_k'] = satellite_coords['x_k']
+        one_epoch['y_k'] = satellite_coords['y_k']
+        one_epoch['z_k'] = satellite_coords['z_k']
+        
+        final_df = pd.concat([final_df, one_epoch]) 
+
+    return final_df
+
 def main():
     measurements, _ = create_dataframes()
     measurements = timestamp_generation(measurements)
     measurements = pseudorange_calculation(measurements)
 
-    df = create_position_dataframe(measurements)
-    measurements = remove_duplicates_from_measurements(measurements)
+    df = create_final_dataframe(measurements)
 
 if __name__ == '__main__':
     main()
