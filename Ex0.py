@@ -212,6 +212,8 @@ def main():
     measurements = pseudorange_calculation(measurements)
 
     df = create_final_dataframe(measurements)
+    final = df[['UnixTime','Svid','x_k','y_k','z_k','PrM','Cn0DbHz']]
+    final.to_csv('out.csv', index=False)
 
 if __name__ == '__main__':
     main()
