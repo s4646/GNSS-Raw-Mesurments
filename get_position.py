@@ -1,8 +1,8 @@
+# https://www.johnsonmitchelld.com/2021/03/14/least-squares-gps.html
 import sys
 import numpy as np
 import pandas as pd
 import navpy
-
 
 LIGHTSPEED = 2.99792458e8
 
