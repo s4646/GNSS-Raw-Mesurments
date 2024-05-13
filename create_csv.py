@@ -2,7 +2,7 @@
 import warnings
 warnings.filterwarnings('ignore')
 
-import os, csv
+import os, csv, sys
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
@@ -11,8 +11,8 @@ from gnssutils.ephemeris_manager import EphemerisManager
 WEEKSEC = 604800
 LIGHTSPEED = 2.99792458e8
 
-def create_dataframes() -> tuple[pd.DataFrame, pd.DataFrame]:
-    input_filepath = os.path.join('data', 'fixed', 'gnss_log_2024_04_13_19_51_17.txt')
+def create_dataframes(path: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    input_filepath = os.path.join('data', path)
 
     with open(input_filepath, 'r') as f:
         reader = csv.reader(f)
@@ -201,7 +201,8 @@ def create_final_dataframe(measurements: pd.DataFrame) -> pd.DataFrame:
     return final_df
 
 def main():
-    measurements, _ = create_dataframes()
+    path = sys.argv[1]
+    measurements, _ = create_dataframes(path)
     measurements = timestamp_generation(measurements)
     measurements = pseudorange_calculation(measurements)
 
