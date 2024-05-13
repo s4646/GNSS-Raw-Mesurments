@@ -1,4 +1,7 @@
 # https://www.johnsonmitchelld.com/2021/03/14/least-squares-gps.html
+import warnings
+warnings.filterwarnings('ignore')
+
 import os, csv
 from datetime import datetime, timedelta
 import pandas as pd
