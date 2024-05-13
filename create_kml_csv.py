@@ -50,7 +50,7 @@ def create_kml(data):
         x, b, dp = least_squares(xs, pr, x0, b0)
         kml.newpoint(name = date, coords = [navpy.ecef2lla(x)])
 
-    kml.save('test.kml')
+    kml.save('out.kml')
 
 def create_csv(data):
     df: pd.DataFrame = data
@@ -81,11 +81,11 @@ def create_csv(data):
         df.loc[df['UnixTime'] == date, 'lon'] = lla[1]
         df.loc[df['UnixTime'] == date, 'alt'] = lla[2]
 
-    df.to_csv('test.csv', index=False)
+    df.to_csv('out.csv', index=False)
 
 
 def main():
-    data = pd.read_csv('out.csv')
+    data = pd.read_csv('data.csv')
     create_kml(data)
     create_csv(data)
 

@@ -208,7 +208,7 @@ def main():
 
     df = create_final_dataframe(measurements)
     final = df[['UnixTime','Svid','x_k','y_k','z_k','PrM','delT_sv','Cn0DbHz']]
-    final.to_csv('out.csv', index=False)
+    final.to_csv('data.csv', index=False)
 
 if __name__ == '__main__':
     main()

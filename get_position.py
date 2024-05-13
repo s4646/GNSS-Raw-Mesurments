@@ -37,7 +37,7 @@ def main():
     
     # date = '2024-04-13 16:51:55.417345280+00:00'
     date = sys.argv[1]
-    data = pd.read_csv('out.csv')
+    data = pd.read_csv('data.csv')
     data = data[data['UnixTime'] == date]
     if len(data) == 0:
         print("Invalid date")
