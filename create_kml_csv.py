@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings('ignore')
+
 import numpy as np
 import pandas as pd
 import subprocess
@@ -31,13 +34,11 @@ def least_squares(xs, measured_pseudorange, x0, b0):
     norm_dp = np.linalg.norm(deltaP)
     return x0, b0, norm_dp
 
-def main():
-    data = pd.read_csv('out.csv')
+def create_kml(data):
     dates = data['UnixTime'].unique()
     kml = simplekml.Kml()
 
     for date in dates:
-    # initial guesses of receiver clock bias and position
         b0 = 0
         x0 = np.array([0, 0, 0])
         temp = data[data['UnixTime'] == date]
@@ -51,5 +52,46 @@ def main():
 
     kml.save('test.kml')
 
+def create_csv(data):
+    df: pd.DataFrame = data
+    dates = df['UnixTime'].unique()
+    df['x'] = None
+    df['y'] = None
+    df['z'] = None
+    df['lat'] = None
+    df['lon'] = None
+    df['alt'] = None
+
+    for date in dates:
+        b0 = 0
+        x0 = np.array([0, 0, 0])
+        temp = data[data['UnixTime'] == date]
+        xs = temp[['x_k', 'y_k', 'z_k']].to_numpy()
+        # Apply satellite clock bias to correct the measured pseudorange values
+        pr = temp['PrM'] + LIGHTSPEED * temp['delT_sv']
+        pr = pr.to_numpy()
+
+        xyz, b, dp = least_squares(xs, pr, x0, b0)
+        lla = navpy.ecef2lla(xyz)
+
+        df.loc[df['UnixTime'] == date, 'x'] = xyz[0]
+        df.loc[df['UnixTime'] == date, 'y'] = xyz[1]
+        df.loc[df['UnixTime'] == date, 'z'] = xyz[2]
+        df.loc[df['UnixTime'] == date, 'lat'] = lla[0]
+        df.loc[df['UnixTime'] == date, 'lon'] = lla[1]
+        df.loc[df['UnixTime'] == date, 'alt'] = lla[2]
+
+    df.to_csv('test.csv', index=False)
+
+
+def main():
+    data = pd.read_csv('out.csv')
+    create_kml(data)
+    create_csv(data)
+
 if __name__ == '__main__':
     main()
+
+#     # CSV
+# result = subprocess.run(['/usr/bin/python', 'get_position.py', date], stdout=subprocess.PIPE)
+# result = result.stdout.decode('utf-8')
