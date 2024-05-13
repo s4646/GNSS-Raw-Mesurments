@@ -1,4 +1,7 @@
 # https://www.johnsonmitchelld.com/2021/03/14/least-squares-gps.html
+import warnings
+warnings.filterwarnings('ignore')
+
 import sys
 import numpy as np
 import pandas as pd
@@ -50,9 +53,10 @@ def main():
     pr = pr.to_numpy()
 
     x, b, dp = least_squares(xs, pr, x0, b0)
+    print(x.tolist())
     print(navpy.ecef2lla(x))
-    print(b/LIGHTSPEED)
-    print(dp)
+    # print(b/LIGHTSPEED)
+    # print(dp)
 
 if __name__ == '__main__':
     main()
