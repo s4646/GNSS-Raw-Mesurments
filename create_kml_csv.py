@@ -48,7 +48,8 @@ def create_kml(data):
         pr = pr.to_numpy()
 
         x, b, dp = least_squares(xs, pr, x0, b0)
-        kml.newpoint(name = date, coords = [navpy.ecef2lla(x)])
+        lla = navpy.ecef2lla(x)
+        kml.newpoint(name = date, coords = [[lla[1], lla[0], lla[2]]])
 
     kml.save('out.kml')
 
